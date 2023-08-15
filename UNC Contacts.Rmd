@@ -10,8 +10,8 @@ library(tidyverse)
 ```
 
 ```{r}
-departmentsPre <- read.csv("/Users/riley/Downloads/UNC\ Contacts\ -\ Departments.csv")
-RSOsPre <- read.csv("/Users/riley/Downloads/UNC\ Contacts\ -\ RSOs.csv")
+departmentsPre <- read.csv(url("https://github.com/rmharp/CTE/raw/main/UNC%20Contacts%20-%20Departments.csv"))
+RSOsPre <- read.csv(url("https://github.com/rmharp/CTE/raw/main/UNC%20Contacts%20-%20RSOs.csv"))
 
 #Changes update fill color column to NA and changes column name 
 departmentsPre[TRUE, 6] <- NA
