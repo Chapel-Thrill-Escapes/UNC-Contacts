@@ -1,0 +1,111 @@
+---
+title: "UNC Contacts"
+output: html_document
+date: "2023-08-13"
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(tidyverse)
+```
+
+```{r}
+departmentsPre <- read.csv("/Users/riley/Downloads/UNC\ Contacts\ -\ Departments.csv")
+RSOsPre <- read.csv("/Users/riley/Downloads/UNC\ Contacts\ -\ RSOs.csv")
+
+#Changes update fill color column to NA and changes column name 
+departmentsPre[TRUE, 6] <- NA
+departmentsPre <- rename(departmentsPre, "Y" = "Update.fill.color.of.title.after.reaching.out")
+
+#Remove 4 columns after every 2 columns until the end of columns in departmentsPre
+idx <- 3
+while (idx <= ncol(departmentsPre)) {
+  for (i in 1:4) {
+  departmentsPre <- departmentsPre[-c(idx)]
+  }
+  idx = idx + 2
+}
+
+#Remove 4 columns after every 2 columns until the end of columns in RSOsPre
+idx <- 3
+while (idx <= ncol(RSOsPre)) {
+  for (i in 1:4) {
+  RSOsPre <- RSOsPre[-c(idx)]
+  }
+  idx = idx + 2
+}
+
+#Shifts colnames in departmentsPre to become rows themselves
+departmentsPre <- rbind(colnames(departmentsPre), departmentsPre)
+departmentsPre[1,] <- gsub("\\.", " ", departmentsPre[1,])
+departmentsPre[1,27] <- gsub("Women ", "Women'", departmentsPre[1,27])
+
+#Creates a vector of distinct types  by saving each unique item from every other column then excludes the title rows by only selecting values which end in a colon
+distinctTypes <- c()
+# Iterate through every other column
+for (idx in seq(from = 1, to = ncol(departmentsPre), by = 2)) {
+  # Save unique values from the current column
+  unique_values <- unique(departmentsPre[, idx])
+  
+  # Exclude title rows by selecting values ending with a colon
+  valid_values <- unique_values[endsWith(unique_values, ":")]
+  
+  # Append valid values to the distinctTypes vector
+  distinctTypes <- c(distinctTypes, valid_values)
+}
+distinctTypes <- gsub("\n", "", distinctTypes)
+distinctTypes <- unique(distinctTypes)
+distinctTypes
+
+#Creates an empty data frame then adds each item by their type (potential types can be found in distinctTypes vector).
+#For context, in the original data set the first column contains position titles and the second column contains the name and email address of each individual this pattern then repeats for ncol(departmentsPre)
+df <- data.frame(matrix("", nrow = length(distinctTypes), ncol = nrow(departmentsPre) + 1))
+colnames(df) <- c("Type", seq(from = 1, to = nrow(departmentsPre)))  # Set column names
+
+# Populate the Type column with distinctTypes
+df$Type <- distinctTypes
+
+# Iterate through rows of departmentsPre
+for (j in seq(from = 1, to = ncol(departmentsPre), by = 2)) {
+  for (i in 1:nrow(departmentsPre)) {
+    type <- departmentsPre[i, j]
+    value <- departmentsPre[i, j + 1]
+    # Check if type is in distinctTypes
+    if (type %in% distinctTypes) {
+      # Find the column index corresponding to the current person
+      person_col <- match(i, colnames(df))
+      # Assign the value to the corresponding cell in df
+      df[df$Type == type, person_col] <- value
+    }
+  }
+}
+
+df_shifted <- df
+
+# Function to shift a vector to the left
+shift_left <- function(vec) {
+  non_na_indices <- which(vec != "")
+  shifted_indices <- rep(NA, length(vec))
+  shifted_indices[seq_along(non_na_indices)] <- non_na_indices
+  shifted_indices <- na.omit(shifted_indices)
+  shifted_values <- vec[shifted_indices]
+  return(shifted_values)
+}
+
+# Iterate through each row
+for (i in 1:nrow(df_shifted)) {
+  row_values <- df_shifted[i, ]  # Extract the row values
+  shifted_row <- shift_left(row_values)
+  df_shifted[i, ] <- c(shifted_row, rep("", ncol(df) - length(shifted_row)))
+}
+
+# Display the df_shifted data frame
+view(df_shifted)
+
+# Display the df data frame
+#view(df)
+
+
+RSOsFinal <- RSOsPre
+departmentsFinal <- departmentsPre
+```
